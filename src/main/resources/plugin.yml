@@ -1,0 +1,8 @@
+name: WeatherVote
+main: net.arhar.weathervote.WeatherVotePlugin
+version: 1.0
+commands:
+    wvt:
+        description: Vote for a time or weather condition
+        aliases: [weathervote]
+        usage: /wvt <time/weather>
