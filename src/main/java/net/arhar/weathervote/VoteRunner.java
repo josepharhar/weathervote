@@ -9,9 +9,11 @@ import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import com.google.common.collect.ImmutableSet;
+
 public class VoteRunner extends BukkitRunnable {
     
-    private static final long TICKS_PER_SECOND = 30;
+    private static final long TICKS_PER_SECOND = 20;
     
     private WeatherVotePlugin plugin;
     private VoteType voteType;
@@ -19,6 +21,7 @@ public class VoteRunner extends BukkitRunnable {
     Set<Player> playersInWorld;
     private long tickCounter;
     private long thresholdTicks;
+    private Set<Long> checkupTicks;
     private World world;
     
     public VoteRunner(WeatherVotePlugin plugin, World world, VoteType voteType, long timeoutSeconds) {
@@ -26,6 +29,10 @@ public class VoteRunner extends BukkitRunnable {
         this.world = world;
         this.voteType = voteType;
         this.thresholdTicks = timeoutSeconds * TICKS_PER_SECOND;
+        this.checkupTicks = ImmutableSet.of(
+    		(long) (thresholdTicks * 0.25),
+    		(long) (thresholdTicks * 0.5),
+    		(long) (thresholdTicks * 0.75));
         this.playerVotes = new HashMap<>();
         this.playersInWorld = new HashSet<>();
     }
@@ -81,7 +88,11 @@ public class VoteRunner extends BukkitRunnable {
     @Override
     public void run() {
         tickCounter++;
-        world.getPlayers().forEach(player -> player.sendMessage("tickCounter: " + tickCounter));
+        if (checkupTicks.contains(tickCounter)) {
+        	long secondsRemaining = (thresholdTicks - tickCounter) / TICKS_PER_SECOND;
+            world.getPlayers().forEach(player -> player.sendMessage(
+        		secondsRemaining + " seconds remaining for " + voteType.getName() + " in world \"" + world.getName() + "\""));
+        }
         if (tickCounter > thresholdTicks) {
             endVote(isVoteSuccess());
         }
@@ -90,11 +101,11 @@ public class VoteRunner extends BukkitRunnable {
     private void endVote(boolean isSuccess) {
         if (isSuccess) {
             world.getPlayers().forEach(player -> player.sendMessage(
-                "Vote passed for " + voteType.getName() + " in world " + world.getName()));
+                "Vote passed for " + voteType.getName() + " in world \"" + world.getName() + "\""));
             voteType.execute(world);
         } else {
             world.getPlayers().forEach(player -> player.sendMessage(
-                "Vote failed for " + voteType.getName() + " in world " + world.getName()));
+                "Vote failed for " + voteType.getName() + " in world \"" + world.getName() + "\""));
         }
         plugin.voteFinished(world);
         this.cancel();
