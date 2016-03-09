@@ -12,9 +12,9 @@ import org.bukkit.scheduler.BukkitRunnable;
 import com.google.common.collect.ImmutableSet;
 
 public class VoteRunner extends BukkitRunnable {
-    
+
     private static final long TICKS_PER_SECOND = 20;
-    
+
     private WeatherVotePlugin plugin;
     private VoteType voteType;
     Map<Player, Boolean> playerVotes;
@@ -23,7 +23,7 @@ public class VoteRunner extends BukkitRunnable {
     private long thresholdTicks;
     private Set<Long> checkupTicks;
     private World world;
-    
+
     public VoteRunner(WeatherVotePlugin plugin, World world, VoteType voteType, long timeoutSeconds) {
         this.plugin = plugin;
         this.world = world;
@@ -36,7 +36,7 @@ public class VoteRunner extends BukkitRunnable {
         this.playerVotes = new HashMap<>();
         this.playersInWorld = new HashSet<>();
     }
-    
+
     public void vote(Player player, VoteType voteType) {
         if (this.voteType.equals(voteType)) {
             // player is voting in favor of the current vote
@@ -48,22 +48,22 @@ public class VoteRunner extends BukkitRunnable {
                 + ", you must wait until it is complete");
         }
     }
-    
+
     public void vote(Player player, boolean isVoteYes) {
         playerVotes.put(player, isVoteYes);
         updateVoteStatus();
     }
-    
+
     private void updateVoteStatus() {
         // this assumes that world.getPlayers() will update when players join/leave
         // this will also not account for players leaving the world
         playersInWorld.addAll(world.getPlayers());
-        
+
         if (isVoteSuccess()) {
             endVote(true);
         }
     }
-    
+
     private boolean isVoteSuccess() {
         double yesVotes = 0;
         double noVotes = 0;
@@ -79,7 +79,7 @@ public class VoteRunner extends BukkitRunnable {
         // this does nothing with "no" votes for now
         return yesVotes / playersInWorld.size() > 0.5;
     }
-    
+
     public void start() {
         this.tickCounter = 0;
         this.runTaskTimer(plugin, 0, 0);
@@ -97,7 +97,7 @@ public class VoteRunner extends BukkitRunnable {
             endVote(isVoteSuccess());
         }
     }
-    
+
     private void endVote(boolean isSuccess) {
         if (isSuccess) {
             world.getPlayers().forEach(player -> player.sendMessage(

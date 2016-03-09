@@ -3,6 +3,7 @@ package net.arhar.weathervote;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.bukkit.World;
 import org.bukkit.command.Command;
@@ -22,52 +23,52 @@ public class WeatherVotePlugin extends JavaPlugin implements Listener {
         "Vote no: /wvt no",
         "Types to vote for: day, night, clear, storm, thunder"
     };
-    private static final ImmutableSet<String> COMMAND_HEADER_TAGS = ImmutableSet.of(
+    private static final Set<String> COMMAND_HEADER_TAGS = ImmutableSet.of(
         "wvt",
         "weathervote");
-    private static final ImmutableSet<String> YES_VOTE_TAGS = ImmutableSet.of(
+    private static final Set<String> YES_VOTE_TAGS = ImmutableSet.of(
         "yes",
         "y");
-    private static final ImmutableSet<String> NO_VOTE_TAGS = ImmutableSet.of(
+    private static final Set<String> NO_VOTE_TAGS = ImmutableSet.of(
         "no",
         "n");
-    
+
     private static final long VOTE_TIMEOUT_SECONDS = 30; // TODO move this to config
 
     private Map<World, VoteRunner> voteRunners;
-    
+
     public void voteFinished(World world) {
         voteRunners.remove(world);
     }
-    
+
     @Override
     public void onEnable() {
         getLogger().info("Weathervote Enabled");
         getServer().getPluginManager().registerEvents(this, this);
         voteRunners = new HashMap<>();
     }
-    
+
     @Override
     public void onDisable() {
         voteRunners.forEach((world, vote) -> vote.cancel());
         voteRunners.clear();
     }
-    
+
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (COMMAND_HEADER_TAGS.contains(command.getName().toLowerCase())
                 && sender instanceof Player) {
             Player player = (Player) sender;
             World world = player.getWorld();
-            
+
             if (args.length < 1) {
                 player.sendMessage(HELP_MESSAGE);
                 return true;
             }
-            
+
             String argument = args[0].toLowerCase();
             Optional<VoteType> voteType = VoteType.parseVoteTarget(argument);
-            
+
             if (voteType.isPresent()) {
                 // player wants to either start a vote or vote
                 if (!voteRunners.containsKey(world)) {
@@ -79,7 +80,7 @@ public class WeatherVotePlugin extends JavaPlugin implements Listener {
                 voteRunners.get(world).vote(player, voteType.get());
                 return true;
             }
-            
+
             boolean isVoteYes;
             if (YES_VOTE_TAGS.contains(argument)) {
                 isVoteYes = true;
@@ -90,10 +91,10 @@ public class WeatherVotePlugin extends JavaPlugin implements Listener {
                 player.sendMessage(HELP_MESSAGE);
                 return true;
             }
-            
+
             voteRunners.get(world).vote(player, isVoteYes);
         }
-        
+
         return true;
     }
 }

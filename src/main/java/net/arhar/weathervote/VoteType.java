@@ -1,6 +1,7 @@
 package net.arhar.weathervote;
 
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import org.bukkit.World;
@@ -28,11 +29,11 @@ public enum VoteType {
         "Thunder",
         ImmutableSet.of("lightning", "thunder"),
         world -> world.setThundering(true));
-    
-    private String name;
-    private ImmutableSet<String> aliases;
-    private Consumer<World> executor;
-    
+
+    private final String name;
+    private final Set<String> aliases;
+    private final Consumer<World> executor;
+
     private VoteType(
             String name,
             ImmutableSet<String> aliases,
@@ -41,19 +42,19 @@ public enum VoteType {
         this.aliases = aliases;
         this.executor = executor;
     }
-    
+
     public void execute(World world) {
         executor.accept(world);
     }
-    
+
     public boolean matchesName(String targetName) {
         return aliases.contains(targetName);
     }
-    
+
     public String getName() {
         return name;
     }
-    
+
     public static Optional<VoteType> parseVoteTarget(String targetName) {
         for (VoteType voteTarget : VoteType.values()) {
             if (voteTarget.matchesName(targetName)) {
