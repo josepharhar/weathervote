@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -14,6 +15,10 @@ import com.google.common.collect.ImmutableSet;
 public class VoteRunner extends BukkitRunnable {
 
     private static final long TICKS_PER_SECOND = 20;
+    private static final String TYPE_COLOR = ChatColor.DARK_AQUA.toString();
+    private static final String WORLD_COLOR = ChatColor.DARK_GREEN.toString();
+    private static final String PLAYER_COLOR = ChatColor.RED.toString();
+    private static final String RESET_COLOR = ChatColor.RESET.toString();
 
     private WeatherVotePlugin plugin;
     private VoteType voteType;
@@ -23,10 +28,12 @@ public class VoteRunner extends BukkitRunnable {
     private long thresholdTicks;
     private Set<Long> checkupTicks;
     private World world;
+    private Player player;
 
-    public VoteRunner(WeatherVotePlugin plugin, World world, VoteType voteType, long timeoutSeconds) {
+    public VoteRunner(WeatherVotePlugin plugin, Player player, World world, VoteType voteType, long timeoutSeconds) {
         this.plugin = plugin;
         this.world = world;
+        this.player = player;
         this.voteType = voteType;
         this.thresholdTicks = timeoutSeconds * TICKS_PER_SECOND;
         this.checkupTicks = ImmutableSet.of(
@@ -83,6 +90,9 @@ public class VoteRunner extends BukkitRunnable {
     public void start() {
         this.tickCounter = 0;
         this.runTaskTimer(plugin, 0, 0);
+        broadcast("Vote started by " + PLAYER_COLOR + player.getName() + RESET_COLOR
+            + " for " + TYPE_COLOR + voteType.getName() + RESET_COLOR
+            + " in world " + WORLD_COLOR + world.getName() + RESET_COLOR);
     }
 
     @Override
@@ -90,8 +100,7 @@ public class VoteRunner extends BukkitRunnable {
         tickCounter++;
         if (checkupTicks.contains(tickCounter)) {
         	long secondsRemaining = (thresholdTicks - tickCounter) / TICKS_PER_SECOND;
-            world.getPlayers().forEach(player -> player.sendMessage(
-        		secondsRemaining + " seconds remaining for " + voteType.getName() + " in world \"" + world.getName() + "\""));
+        	broadcast(secondsRemaining + " seconds remaining for " + voteType.getName() + " in world \"" + world.getName() + "\"");
         }
         if (tickCounter > thresholdTicks) {
             endVote(isVoteSuccess());
@@ -100,14 +109,18 @@ public class VoteRunner extends BukkitRunnable {
 
     private void endVote(boolean isSuccess) {
         if (isSuccess) {
-            world.getPlayers().forEach(player -> player.sendMessage(
-                "Vote passed for " + voteType.getName() + " in world \"" + world.getName() + "\""));
+            broadcast("Vote passed for " + TYPE_COLOR + voteType.getName() + RESET_COLOR
+                + " in world " + WORLD_COLOR + world.getName() + RESET_COLOR);
             voteType.execute(world);
         } else {
-            world.getPlayers().forEach(player -> player.sendMessage(
-                "Vote failed for " + voteType.getName() + " in world \"" + world.getName() + "\""));
+            broadcast("Vote failed for " + TYPE_COLOR + voteType.getName() + RESET_COLOR
+                    + " in world " + WORLD_COLOR + world.getName() + RESET_COLOR);
         }
         plugin.voteFinished(world);
         this.cancel();
+    }
+
+    private void broadcast(String message) {
+        world.getPlayers().forEach(player -> player.sendMessage(message));
     }
 }

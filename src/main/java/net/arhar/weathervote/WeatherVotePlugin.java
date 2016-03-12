@@ -73,7 +73,7 @@ public class WeatherVotePlugin extends JavaPlugin implements Listener {
                 // player wants to either start a vote or vote
                 if (!voteRunners.containsKey(world)) {
                     // start a new vote
-                    VoteRunner newVote = new VoteRunner(this, world, voteType.get(), VOTE_TIMEOUT_SECONDS);
+                    VoteRunner newVote = new VoteRunner(this, player, world, voteType.get(), VOTE_TIMEOUT_SECONDS);
                     voteRunners.put(world, newVote);
                     newVote.start();
                 }
