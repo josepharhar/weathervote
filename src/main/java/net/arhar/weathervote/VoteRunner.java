@@ -1,11 +1,16 @@
 package net.arhar.weathervote;
 
+import static net.arhar.weathervote.WeatherVoteChat.PLUGIN_PREFIX;
+import static net.arhar.weathervote.WeatherVoteChat.player;
+import static net.arhar.weathervote.WeatherVoteChat.type;
+import static net.arhar.weathervote.WeatherVoteChat.world;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
-import org.bukkit.ChatColor;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -15,10 +20,6 @@ import com.google.common.collect.ImmutableSet;
 public class VoteRunner extends BukkitRunnable {
 
     private static final long TICKS_PER_SECOND = 20;
-    private static final String TYPE_COLOR = ChatColor.DARK_AQUA.toString();
-    private static final String WORLD_COLOR = ChatColor.DARK_GREEN.toString();
-    private static final String PLAYER_COLOR = ChatColor.RED.toString();
-    private static final String RESET_COLOR = ChatColor.RESET.toString();
 
     private WeatherVotePlugin plugin;
     private VoteType voteType;
@@ -58,41 +59,53 @@ public class VoteRunner extends BukkitRunnable {
 
     public void vote(Player player, boolean isVoteYes) {
         playerVotes.put(player, isVoteYes);
+        player.sendMessage(PLUGIN_PREFIX + "You voted " + type((isVoteYes ? "yes" : "no"))
+            + " for " + type(voteType.getName()) + " in " + world(world.getName()));
         updateVoteStatus();
     }
 
     private void updateVoteStatus() {
         // this assumes that world.getPlayers() will update when players join/leave
-        // this will also not account for players leaving the world
+        // this should also retain players who left the world
         playersInWorld.addAll(world.getPlayers());
 
-        if (isVoteSuccess()) {
+        if (isVoteAutoPassed()) {
             endVote(true);
         }
     }
 
-    private boolean isVoteSuccess() {
-        double yesVotes = 0;
-        double noVotes = 0;
-        for (Map.Entry<Player, Boolean> vote : playerVotes.entrySet()) {
+    private boolean isVoteAutoPassed() {
+        int yesVotes = 0;
+        for (Entry<Player, Boolean> vote : playerVotes.entrySet()) {
+            if (vote.getValue()) {
+                yesVotes++;
+            }
+        }
+
+        // >50% yes votes required to pass a vote immediately
+        return yesVotes / (double) playersInWorld.size() > 0.5;
+    }
+
+    private boolean isVotePassed() {
+        int yesVotes = 0;
+        int noVotes = 0;
+        for (Entry<Player, Boolean> vote : playerVotes.entrySet()) {
             if (vote.getValue()) {
                 yesVotes++;
             } else {
                 noVotes++;
             }
         }
-        // 50% yes required to pass a vote
-        // TODO move this to config
-        // this does nothing with "no" votes for now
-        return yesVotes / playersInWorld.size() > 0.5;
+
+        return yesVotes > noVotes;
     }
 
     public void start() {
         this.tickCounter = 0;
         this.runTaskTimer(plugin, 0, 0);
-        broadcast("Vote started by " + PLAYER_COLOR + player.getName() + RESET_COLOR
-            + " for " + TYPE_COLOR + voteType.getName() + RESET_COLOR
-            + " in world " + WORLD_COLOR + world.getName() + RESET_COLOR);
+        broadcast("Vote by " + player(player.getName())
+            + " for " + type(voteType.getName())
+            + " in " + world(world.getName()));
     }
 
     @Override
@@ -100,27 +113,28 @@ public class VoteRunner extends BukkitRunnable {
         tickCounter++;
         if (checkupTicks.contains(tickCounter)) {
         	long secondsRemaining = (thresholdTicks - tickCounter) / TICKS_PER_SECOND;
-        	broadcast(secondsRemaining + " seconds remaining for " + voteType.getName() + " in world \"" + world.getName() + "\"");
+        	broadcast(secondsRemaining + " seconds remaining for " + type(voteType.getName())
+        	    + " in " + world(world.getName()));
         }
         if (tickCounter > thresholdTicks) {
-            endVote(isVoteSuccess());
+            endVote(isVotePassed());
         }
     }
 
     private void endVote(boolean isSuccess) {
         if (isSuccess) {
-            broadcast("Vote passed for " + TYPE_COLOR + voteType.getName() + RESET_COLOR
-                + " in world " + WORLD_COLOR + world.getName() + RESET_COLOR);
+            broadcast("Vote passed for " + type(voteType.getName())
+                + " in " + world(world.getName()));
             voteType.execute(world);
         } else {
-            broadcast("Vote failed for " + TYPE_COLOR + voteType.getName() + RESET_COLOR
-                    + " in world " + WORLD_COLOR + world.getName() + RESET_COLOR);
+            broadcast("Vote failed for " + type(voteType.getName())
+                + " in " + world(world.getName()));
         }
         plugin.voteFinished(world);
         this.cancel();
     }
 
     private void broadcast(String message) {
-        world.getPlayers().forEach(player -> player.sendMessage(message));
+        world.getPlayers().forEach(player -> player.sendMessage(PLUGIN_PREFIX + message));
     }
 }

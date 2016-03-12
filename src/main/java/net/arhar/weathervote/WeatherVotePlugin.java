@@ -1,5 +1,9 @@
 package net.arhar.weathervote;
 
+import static net.arhar.weathervote.WeatherVoteChat.PLUGIN_PREFIX;
+import static net.arhar.weathervote.WeatherVoteChat.plugin;
+import static net.arhar.weathervote.WeatherVoteChat.type;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -17,12 +21,13 @@ import com.google.common.collect.ImmutableSet;
 public class WeatherVotePlugin extends JavaPlugin implements Listener {
 
     public static final String[] HELP_MESSAGE = {
-        "Weathervote command usage examples",
-        "Start a vote: /wvt <time/weather>",
-        "Vote yes: /wvt yes",
-        "Vote no: /wvt no",
-        "Types to vote for: day, night, clear, storm, thunder"
-    };
+        plugin("WeatherVote") + " command help",
+        "Start a vote: /wvt <" + type("time/weather") + ">",
+        "Vote yes: /wvt " + type("yes"),
+        "Vote no: /wvt " + type("no"),
+        "Types to vote for: " + type("day") + ", " + type("night")
+            + ", " + type("clear") + ", " + type("storm") + ", " + type("thunder")
+        };
     private static final Set<String> COMMAND_HEADER_TAGS = ImmutableSet.of(
         "wvt",
         "weathervote");
@@ -43,7 +48,7 @@ public class WeatherVotePlugin extends JavaPlugin implements Listener {
 
     @Override
     public void onEnable() {
-        getLogger().info("Weathervote Enabled");
+        getLogger().info(PLUGIN_PREFIX + "Enabled");
         getServer().getPluginManager().registerEvents(this, this);
         voteRunners = new HashMap<>();
     }
@@ -87,7 +92,7 @@ public class WeatherVotePlugin extends JavaPlugin implements Listener {
             } else if (NO_VOTE_TAGS.contains(argument)) {
                 isVoteYes = false;
             } else {
-                player.sendMessage("unrecognized weathervote argument: " + argument);
+                player.sendMessage(PLUGIN_PREFIX + "unrecognized weathervote argument: " + argument);
                 player.sendMessage(HELP_MESSAGE);
                 return true;
             }
