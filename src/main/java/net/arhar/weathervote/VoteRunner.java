@@ -52,7 +52,7 @@ public class VoteRunner extends BukkitRunnable {
         } else {
             // player is voting for a vote that isnt the current vote
             player.sendMessage(
-                "a vote is currently running for " + voteType.getName()
+                "a vote is currently running for " + this.voteType.getName()
                 + ", you must wait until it is complete");
         }
     }
